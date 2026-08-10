@@ -1,25 +1,10 @@
 import React,{useEffect,useMemo,useState}from'react';
 import{createRoot}from'react-dom/client';
 import{LayoutDashboard,ShoppingCart,Package,Truck,FileText,BarChart3,Languages,Search,Plus,AlertTriangle,Clock3,BadgeDollarSign,ReceiptText,Menu,X,Trash2,Printer,ArrowLeft,CheckCircle2,Pill,ChevronRight,RotateCcw}from'lucide-react';
+import{completeSale,daysLeft,invoiceTotal,money,recordPurchase,today}from'./lib/pharmacy.js';
+import{seed}from'./data/seed.js';
 import'./styles.css';
-
-const today=()=>new Date().toISOString().slice(0,10);
-const addDays=n=>{const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
-const seed={
- medicines:[
-  {id:'m1',name:'Panadol 500mg',generic:'Paracetamol',barcode:'8964000123456',batch:'PN-2407',expiry:addDays(420),cost:26,price:35,stock:85,min:20,unit:'Strip',supplier:'HealthCare Distributors'},
-  {id:'m2',name:'Augmentin 625mg',generic:'Co-amoxiclav',barcode:'8964000789012',batch:'AG-1182',expiry:addDays(75),cost:345,price:410,stock:9,min:10,unit:'Pack',supplier:'City Medicine Supply'},
-  {id:'m3',name:'Brufen 400mg',generic:'Ibuprofen',barcode:'8964000456123',batch:'BR-992',expiry:addDays(18),cost:42,price:55,stock:24,min:12,unit:'Strip',supplier:'HealthCare Distributors'},
-  {id:'m4',name:'Risek 20mg',generic:'Omeprazole',barcode:'8964000321654',batch:'RK-401',expiry:addDays(190),cost:135,price:165,stock:6,min:10,unit:'Pack',supplier:'Metro Pharma'},
-  {id:'m5',name:'Calpol Syrup 120ml',generic:'Paracetamol syrup',barcode:'8964000876543',batch:'CP-330',expiry:addDays(12),cost:175,price:215,stock:14,min:6,unit:'Bottle',supplier:'City Medicine Supply'}
- ],
- suppliers:[{id:'s1',name:'HealthCare Distributors',phone:'0300 1112233',due:18500},{id:'s2',name:'City Medicine Supply',phone:'0321 4445566',due:9200},{id:'s3',name:'Metro Pharma',phone:'0333 7778899',due:0}],
- invoices:[], purchases:[], movements:[]
-};
 const load=()=>{try{return{...seed,...JSON.parse(localStorage.getItem('pharmacy-desk-v1'))}}catch{return seed}};
-const money=n=>`Rs ${Number(n||0).toLocaleString('en-PK')}`;
-const daysLeft=date=>Math.ceil((new Date(date+'T00:00')-new Date())/86400000);
-const invoiceTotal=i=>Math.max(0,i.items.reduce((s,x)=>s+x.price*x.qty,0)-Number(i.discount||0));
 const words={
  en:{dash:'Overview',sale:'New sale',stock:'Medicines & stock',purchase:'Purchases',supplier:'Suppliers',invoice:'Invoices',report:'Reports',search:'Search medicine, generic, barcode or batch',newSale:'New sale',hello:'Good morning, Ahmed',sub:'Here is what needs your attention today',sales:"Today's sales",profit:'Estimated profit',low:'Low stock',expiring:'Expiring soon',quick:'Quick actions',start:'Start billing',addMed:'Add medicine',buy:'Record purchase',recent:'Recent invoices',attention:'Needs attention',language:'اردو'},
  ur:{dash:'خلاصہ',sale:'نئی فروخت',stock:'ادویات اور اسٹاک',purchase:'خریداری',supplier:'سپلائرز',invoice:'انوائس',report:'رپورٹس',search:'دوا، جنیرک، بارکوڈ یا بیچ تلاش کریں',newSale:'نئی فروخت',hello:'السلام علیکم، احمد',sub:'آج ان چیزوں پر توجہ دیں',sales:'آج کی فروخت',profit:'اندازاً منافع',low:'کم اسٹاک',expiring:'جلد ختم ہونے والی',quick:'فوری کام',start:'بل بنائیں',addMed:'دوا شامل کریں',buy:'خریداری درج کریں',recent:'حالیہ انوائس',attention:'توجہ ضروری',language:'English'}
@@ -30,9 +15,9 @@ function App(){
  useEffect(()=>localStorage.setItem('pharmacy-desk-v1',JSON.stringify(data)),[data]);useEffect(()=>localStorage.setItem('pharmacy-lang',lang),[lang]);
  const t=words[lang],showNotice=x=>{setNotice(x);setTimeout(()=>setNotice(''),2200)},navigate=x=>{setView(x);setNav(false);setQuery('')};
  const filtered=data.medicines.filter(m=>`${m.name} ${m.generic} ${m.barcode} ${m.batch}`.toLowerCase().includes(query.toLowerCase()));
- const saveInvoice=inv=>{setData(d=>({...d,invoices:[inv,...d.invoices],medicines:d.medicines.map(m=>{const item=inv.items.find(x=>x.id===m.id);return item?{...m,stock:m.stock-item.qty}:m}),movements:[...inv.items.map(x=>({id:`mv${Date.now()}${x.id}`,date:inv.date,medicine:x.name,change:-x.qty,reason:inv.id})),...d.movements]}));setSelected(inv);setView('invoice');showNotice(lang==='ur'?'فروخت محفوظ ہو گئی':'Sale completed')};
+ const saveInvoice=inv=>{setData(d=>completeSale(d,inv));setSelected(inv);setView('invoice');showNotice(lang==='ur'?'فروخت محفوظ ہو گئی':'Sale completed')};
  const saveMedicine=m=>{setData(d=>({...d,medicines:[m,...d.medicines],movements:[{id:`mv${Date.now()}`,date:today(),medicine:m.name,change:m.stock,reason:'Opening stock'},...d.movements]}));setModal(null);showNotice(lang==='ur'?'دوا محفوظ ہو گئی':'Medicine saved')};
- const savePurchase=p=>{setData(d=>({...d,purchases:[p,...d.purchases],medicines:d.medicines.map(m=>m.id===p.medicineId?{...m,stock:m.stock+p.qty,cost:p.cost,batch:p.batch||m.batch,expiry:p.expiry||m.expiry}:m),movements:[{id:`mv${Date.now()}`,date:p.date,medicine:d.medicines.find(m=>m.id===p.medicineId)?.name,change:p.qty,reason:`Purchase ${p.id}`},...d.movements]}));setModal(null);showNotice(lang==='ur'?'خریداری محفوظ ہو گئی':'Purchase saved')};
+ const savePurchase=p=>{setData(d=>recordPurchase(d,p));setModal(null);showNotice(lang==='ur'?'خریداری محفوظ ہو گئی':'Purchase saved')};
  return <div className={`app ${lang==='ur'?'urdu':''}`} dir={lang==='ur'?'rtl':'ltr'}>
   <aside className={nav?'sidebar open':'sidebar'}><div className="brand"><span><Pill/></span><div><strong>Pharmacy Desk</strong><small>Simple pharmacy control</small></div><button className="close" onClick={()=>setNav(false)}><X/></button></div><nav>
    <Nav icon={LayoutDashboard} text={t.dash} active={view==='dashboard'} click={()=>navigate('dashboard')}/><Nav icon={ShoppingCart} text={t.sale} active={view==='sale'} click={()=>navigate('sale')}/><Nav icon={Package} text={t.stock} active={view==='stock'} click={()=>navigate('stock')} badge={data.medicines.filter(x=>x.stock<=x.min).length}/><Nav icon={Truck} text={t.purchase} active={view==='purchases'} click={()=>navigate('purchases')}/><Nav icon={FileText} text={t.invoice} active={view==='invoices'||view==='invoice'} click={()=>navigate('invoices')} badge={data.invoices.length}/><Nav icon={BarChart3} text={t.report} active={view==='reports'} click={()=>navigate('reports')}/>
