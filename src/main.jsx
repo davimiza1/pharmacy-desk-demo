@@ -1,8 +1,7 @@
 import React,{useEffect,useMemo,useState}from'react';
 import{createRoot}from'react-dom/client';
 import{LayoutDashboard,ShoppingCart,Package,Truck,FileText,BarChart3,Languages,Search,Plus,AlertTriangle,Clock3,BadgeDollarSign,ReceiptText,Menu,X,Trash2,Printer,ArrowLeft,CheckCircle2,Pill,ChevronRight,RotateCcw}from'lucide-react';
-import{completeSale,daysLeft,invoiceTotal,money,recordPurchase,today}from'./lib/pharmacy.js';
-import{seed}from'./data/seed.js';
+import{completeSale,daysLeft,invoiceTotal,money,recordPurchase,today,seed}from'./pharmacy.js';
 import'./styles.css';
 const load=()=>{try{return{...seed,...JSON.parse(localStorage.getItem('pharmacy-desk-v1'))}}catch{return seed}};
 const words={
