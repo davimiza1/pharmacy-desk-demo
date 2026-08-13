@@ -1,5 +1,9 @@
 # Pharmacy Desk
 
+[![CI](https://github.com/davimiza1/pharmacy-desk-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/davimiza1/pharmacy-desk-demo/actions/workflows/ci.yml)
+[![React](https://img.shields.io/badge/React-19-149eca?logo=react)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-8-646cff?logo=vite&logoColor=white)](https://vite.dev/)
+
 A simple, bilingual pharmacy billing and inventory demo designed for local pharmacies in Pakistan. The interface prioritizes fast counter work, batch traceability, expiry safety, and understandable owner reports.
 
 ![Pharmacy Desk social preview](public/og.png)
@@ -59,6 +63,8 @@ This repository is a sales demonstration. Business records are currently stored 
 ## Safety
 
 Pharmacy Desk manages business records; it does not provide medical advice, diagnose conditions, or validate prescriptions. Production use requires appropriate operational and legal review.
+
+See [SECURITY.md](SECURITY.md) for responsible disclosure and production data requirements.
 
 ## Deployment
 
